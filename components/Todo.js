@@ -1,6 +1,20 @@
 import React from "react"
+import { TodosContext } from "../contexts/TodosContext"
+import { useContext } from "react"
 
 export default function Todo({ todo }) {
+  // Note that we can just grab the functions or pieces of context we desire
+  const { updateTodo, deleteTodo } = useContext(TodosContext)
+
+  const handleToggleCompleted = () => {
+    const updatedFields = {
+      ...todo.fields,
+      completed: !todo.fields.completed,
+    }
+    const updatedTodo = { id: todo.id, fields: updatedFields }
+    updateTodo(updatedTodo)
+  }
+
   return (
     <li className="bg-white flex items-center shadow-lg rounded-lg my-2 py-2 px-4">
       <input
@@ -9,6 +23,7 @@ export default function Todo({ todo }) {
         id="completed"
         checked={todo.fields.completed}
         className="mr-2 form-checkbox h-5 w-5"
+        onChange={handleToggleCompleted}
       />
       <p
         className={`flex-1 text-gray-800 ${
@@ -20,6 +35,7 @@ export default function Todo({ todo }) {
       <button
         type="button"
         className="text-sm bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded"
+        onClick={() => deleteTodo(todo.id)}
       >
         Delete
       </button>
