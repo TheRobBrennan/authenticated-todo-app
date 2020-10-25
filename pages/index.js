@@ -5,6 +5,7 @@ import { table, minifyRecords } from "./api/utils/Airtable"
 import { TodosContext } from "../contexts/TodosContext"
 import { useEffect, useContext } from "react"
 import auth0 from "./api/utils/Auth0"
+import TodoForm from "../components/TodoForm"
 
 export default function Home({ initialTodos, user }) {
   // We can access all of the properties within our TodosContext
@@ -23,10 +24,15 @@ export default function Home({ initialTodos, user }) {
       </Head>
       <Navbar user={user} />
       <main>
-        <h1>Todo App</h1>
-        <ul>
-          {todos && todos.map((todo) => <Todo key={todo.id} todo={todo} />)}
-        </ul>
+        {user && (
+          <>
+            <h1 className="text-2xl text-center mb-4">My todos</h1>
+            <TodoForm />
+            <ul>
+              {todos && todos.map((todo) => <Todo key={todo.id} todo={todo} />)}
+            </ul>
+          </>
+        )}
       </main>
     </div>
   )
