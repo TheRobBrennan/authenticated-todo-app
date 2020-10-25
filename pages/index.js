@@ -1,65 +1,69 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import Head from "next/head"
+import Navbar from "../components/Navbar"
+import Todo from "../components/Todo"
+import { table, minifyRecords } from "./api/utils/Airtable"
+import { TodosContext } from "../contexts/TodosContext"
+import { useEffect, useContext } from "react"
+import auth0 from "./api/utils/Auth0"
+import TodoForm from "../components/TodoForm"
 
-export default function Home() {
+export default function Home({ initialTodos, user }) {
+  // We can access all of the properties within our TodosContext
+  const { todos, setTodos } = useContext(TodosContext)
+
+  // When this component is first created, set the context todos to the value of our todos from Airtable
+  useEffect(() => {
+    setTodos(initialTodos)
+  }, [])
+
   return (
-    <div className={styles.container}>
+    <div>
       <Head>
-        <title>Create Next App</title>
+        <title>Authenticated Todo App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+      <Navbar user={user} />
+      <main>
+        {user && (
+          <>
+            <h1 className="text-2xl text-center mb-4">My todos</h1>
+            <TodoForm />
+            <ul>
+              {todos && todos.map((todo) => <Todo key={todo.id} todo={todo} />)}
+            </ul>
+          </>
+        )}
+        {!user && <p>Please login to view and save your todos.</p>}
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
     </div>
   )
+}
+
+// This function will run before the page is served
+export async function getServerSideProps(context) {
+  try {
+    let todos = []
+    const session = await auth0.getSession(context.req)
+    const user = session?.user || null
+
+    if (user) {
+      // Load the first page of records from Airtable
+      todos = await table
+        .select({
+          filterByFormula: `userId = '${session.user.sub}'`,
+        })
+        .firstPage()
+    }
+
+    return {
+      // These are props that are going to be passed to our page
+      props: {
+        initialTodos: minifyRecords(todos),
+        user,
+      },
+    }
+  } catch (err) {
+    console.error(err)
+    return {}
+  }
 }
