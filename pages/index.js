@@ -33,6 +33,7 @@ export default function Home({ initialTodos, user }) {
             </ul>
           </>
         )}
+        {!user && <p>Please login to view and save your todos.</p>}
       </main>
     </div>
   )
@@ -41,11 +42,18 @@ export default function Home({ initialTodos, user }) {
 // This function will run before the page is served
 export async function getServerSideProps(context) {
   try {
+    let todos = []
     const session = await auth0.getSession(context.req)
     const user = session?.user || null
 
-    // Load the first page of records from Airtable
-    const todos = await table.select({}).firstPage()
+    if (user) {
+      // Load the first page of records from Airtable
+      todos = await table
+        .select({
+          filterByFormula: `userId = '${session.user.sub}'`,
+        })
+        .firstPage()
+    }
 
     return {
       // These are props that are going to be passed to our page
