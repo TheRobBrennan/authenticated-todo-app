@@ -4,8 +4,9 @@ import Todo from "../components/Todo"
 import { table, minifyRecords } from "./api/utils/Airtable"
 import { TodosContext } from "../contexts/TodosContext"
 import { useEffect, useContext } from "react"
+import auth0 from "./api/utils/Auth0"
 
-export default function Home({ initialTodos }) {
+export default function Home({ initialTodos, user }) {
   // We can access all of the properties within our TodosContext
   const { todos, setTodos } = useContext(TodosContext)
 
@@ -20,7 +21,7 @@ export default function Home({ initialTodos }) {
         <title>Authenticated Todo App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Navbar />
+      <Navbar user={user} />
       <main>
         <h1>Todo App</h1>
         <ul>
@@ -34,6 +35,9 @@ export default function Home({ initialTodos }) {
 // This function will run before the page is served
 export async function getServerSideProps(context) {
   try {
+    const session = await auth0.getSession(context.req)
+    const user = session?.user || null
+
     // Load the first page of records from Airtable
     const todos = await table.select({}).firstPage()
 
@@ -41,14 +45,11 @@ export async function getServerSideProps(context) {
       // These are props that are going to be passed to our page
       props: {
         initialTodos: minifyRecords(todos),
+        user,
       },
     }
   } catch (err) {
     console.error(err)
-    return {
-      props: {
-        err,
-      },
-    }
+    return {}
   }
 }
