@@ -1,10 +1,9 @@
 import Head from "next/head"
 import Navbar from "../components/Navbar"
+import Todo from "../components/Todo"
 import { table, minifyRecords } from "./api/utils/Airtable"
 
 export default function Home({ initialTodos }) {
-  console.log(initialTodos)
-
   return (
     <div>
       <Head>
@@ -14,6 +13,11 @@ export default function Home({ initialTodos }) {
       <Navbar />
       <main>
         <h1>Todo App</h1>
+        <ul>
+          {initialTodos.map((todo) => (
+            <Todo key={todo.id} todo={todo} />
+          ))}
+        </ul>
       </main>
     </div>
   )
